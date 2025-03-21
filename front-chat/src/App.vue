@@ -10,10 +10,12 @@
               
               :key="message.id"
               
-              
             >
               <div  :class="['message-bubble', message.whoSended==='You'?['my-message', 'text-right']:'other-message']">
-                <v-list-item-subtitle disabled>{{ message.whoSended }}</v-list-item-subtitle>
+                <v-list-item-subtitle
+                style="user-select: none; -webkit-user-select: none"
+                >
+                {{ message.whoSended }}</v-list-item-subtitle>
                 <v-list-item-title >{{ message.text}}</v-list-item-title>
               </div>
             </v-list-item>
@@ -33,6 +35,7 @@
 </template>
 
 <script lang="ts" setup>
+  import './styles/settings.scss';
   import axios from 'axios';
   import { onBeforeUnmount, onMounted, ref, nextTick } from "vue";
   import { io } from "socket.io-client";
@@ -41,6 +44,21 @@
   const messages = ref<any[]>([])
   let socket: ReturnType<typeof io>;
   const messagesList = ref<HTMLElement>();
+
+  async function get_jwt() {
+    try {
+    const response = await axios.post('http://localhost:5000/auth/login', {
+      username: 'john', 
+      password: 'changeme'
+    }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return response.data.access_token;
+  } catch (error) {
+    console.error('Auth error:', error);
+    throw error;
+  }
+}
 
   function onClick() {
     if (text.value.trim()) {
@@ -60,11 +78,14 @@
   });
   };
 
-  function initWebSocket() {
+  function initWebSocket(jwt_token: any) {
     socket = io("ws://localhost:8080", {
       transports: ['websocket'],
       autoConnect: true,
-      reconnection: true
+      reconnection: true,
+      auth: {
+        token: `Bearer ${jwt_token}` 
+      }
     });
 
     socket.on('connect', () => {
@@ -88,54 +109,12 @@
   }
 
 
-  onMounted(()=> {
-    initWebSocket();
+  onMounted(async()=> {
+    await get_jwt()
+    .then(initWebSocket)
+    .catch(console.log)
   })
   onBeforeUnmount(() => {
     if (socket) socket.disconnect();
 });
 </script>
-
-<style>
-.message-bubble {
-  max-width: 70%;
-  padding: 8px 12px;
-  border-radius: 10px;
-  word-break: break-word;
-}
-.my-message {
-  margin-left: auto;
-  background-color: #2196F3;
-  color: white;
-  border-radius: 25px 5px 25px 25px;
-}
-
-.other-message {
-  margin-right: auto;
-  background-color: #e0e0e0;
-  color: black;
-  border-radius: 5px 25px 25px 25px;
-}
-.messages-container {
-  height: calc(100vh - 64px); /* Учитываем высоту верхних элементов */
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 0px; /* Отступ от нижнего поля */
-}
-
-.messages-list {
-  flex: 1;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column-reverse; /* Новые сообщения добавляются снизу */
-
-}
-.v-list {
-  margin-top: auto; /* Прижимаем список к низу */
-  min-height: min-content; /* Минимальная высота по содержимому */
-}
-.inputText {
-  max-height: fit-content;
-  flex-shrink: 0; /* Фиксируем поле ввода */
-}
-</style>

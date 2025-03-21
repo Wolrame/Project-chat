@@ -2,11 +2,15 @@ import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnectio
 import { Server, Socket } from 'socket.io';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { AuthGuard } from 'src/auth/auth.guard';
+import { UseGuards } from '@nestjs/common';
 
+@UseGuards(AuthGuard)
 @WebSocketGateway(8080, {
   cors: {
     origin: 'http://localhost:3000', // Адрес фронтенда
     methods: ['GET', 'POST'],
+    allowedHeaders: ['Authorization'],
     credentials: true,
   },
   transports: ['websocket']
