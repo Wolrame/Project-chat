@@ -62,21 +62,6 @@
   }
   const WhoAreYou = ref<string>('')
 
-/*   async function get_jwt() {
-    try {
-    const response = await axios.post('http://localhost:5000/auth/login', {
-      username: 'john', 
-      password: 'changeme'
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
-    return response.data.access_token;
-  } catch (error) {
-    console.error('Auth error:', error);
-    throw error;
-  }
-} */
-
   function onClick() {
     if (text.value.trim()) {
       socket.emit('createMessage', {
@@ -95,8 +80,11 @@
   });
   };
 
-  function initWebSocket(jwt_token: any) {
-    socket = io("ws://localhost:8080", {
+  async function initWebSocket(jwt_token: any) {
+    if (!jwt_token) {
+      throw console.error('Unauthorized');
+    }
+    socket = await io("ws://localhost:8080", {
       transports: ['websocket'],
       autoConnect: true,
       reconnection: true,
@@ -125,8 +113,11 @@
     });
   }
 
-
-  onMounted(async()=> {})
+  onMounted(async()=> {
+    initWebSocket(localStorage.getItem("access_token"))
+    .then(()=> isAuthenticated.value=true)
+    .catch(console.log);
+  })
   onBeforeUnmount(() => {
     if (socket) socket.disconnect();
 });

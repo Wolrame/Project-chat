@@ -80,6 +80,7 @@ const onSubmit = async () => {
 
     // Сохраняем токен
     localStorage.setItem('access_token', response.data.access_token);
+    localStorage.setItem('username', login.value);
     emit('login-success', response.data.access_token);
     emit('username', login.value)
   } catch (error) {
