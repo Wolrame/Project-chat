@@ -1,7 +1,8 @@
 <template>
   <v-app>
     <v-main>
-      <v-container max-width="500" class="messages-container">
+      <Auth v-if="!isAuthenticated" @login-success="handleLoginSuccess" @username="handleUsername"/>
+      <v-container v-else max-width="500" class="messages-container">
         <!-- Добавлен wrapper для списка сообщений -->
         <div ref="messagesList" class="messages-list">
           <v-list>
@@ -11,11 +12,11 @@
               :key="message.id"
               
             >
-              <div  :class="['message-bubble', message.whoSended==='You'?['my-message', 'text-right']:'other-message']">
+              <div  :class="['message-bubble', message.whoSended===WhoAreYou?['my-message', 'text-right']:'other-message']">
                 <v-list-item-subtitle
                 style="user-select: none; -webkit-user-select: none"
                 >
-                {{ message.whoSended }}</v-list-item-subtitle>
+                {{ message.whoSended===WhoAreYou?'You':message.whoSended }}</v-list-item-subtitle>
                 <v-list-item-title >{{ message.text}}</v-list-item-title>
               </div>
             </v-list-item>
@@ -35,17 +36,33 @@
 </template>
 
 <script lang="ts" setup>
+  import Auth from "./components/Auth.vue";
   import './styles/settings.scss';
   import axios from 'axios';
   import { onBeforeUnmount, onMounted, ref, nextTick } from "vue";
   import { io } from "socket.io-client";
 
+
+
+  const routes = {
+  '/auth': Auth
+}
+
+  const isAuthenticated = ref(false);
   const text = ref('')
   const messages = ref<any[]>([])
   let socket: ReturnType<typeof io>;
   const messagesList = ref<HTMLElement>();
+  const handleLoginSuccess = (token: string) => {
+    isAuthenticated.value = true;
+    initWebSocket(token);
+  };
+  const handleUsername = (username: string) => {
+    WhoAreYou.value=username;
+  }
+  const WhoAreYou = ref<string>('')
 
-  async function get_jwt() {
+/*   async function get_jwt() {
     try {
     const response = await axios.post('http://localhost:5000/auth/login', {
       username: 'john', 
@@ -58,12 +75,12 @@
     console.error('Auth error:', error);
     throw error;
   }
-}
+} */
 
   function onClick() {
     if (text.value.trim()) {
       socket.emit('createMessage', {
-        whoSended: "You",
+        whoSended: WhoAreYou.value,
         text: text.value
       });
       text.value = '';
@@ -109,11 +126,7 @@
   }
 
 
-  onMounted(async()=> {
-    await get_jwt()
-    .then(initWebSocket)
-    .catch(console.log)
-  })
+  onMounted(async()=> {})
   onBeforeUnmount(() => {
     if (socket) socket.disconnect();
 });
