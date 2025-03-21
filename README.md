@@ -5,4 +5,4 @@ For starting:
 
 2.For Frontend starting: Use terminal commands
   1) "cd .\front-chat\"
-  2) "npm run start:dev"
+  2) "npm run dev"
