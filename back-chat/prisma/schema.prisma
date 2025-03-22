@@ -18,4 +18,29 @@ model User {
   id    Int     @default(autoincrement()) @id
   username String  @unique
   password String
+  messages Messages[]
+  inChat InChat[]
+}
+
+model Messages {
+  id Int  @default(autoincrement()) @id
+  user User? @relation(fields: [WhoSended], references: [username])
+  WhoSended String
+  text String
+  chats Chats? @relation(fields: [chat], references: [chat_id])
+  chat Int
+}
+
+model Chats {
+  chat_id Int @default(autoincrement()) @id
+  chat String
+  messages Messages[]
+  inChat InChat[]
+}
+
+model InChat {
+  user User? @relation(fields: [username], references: [username])
+  username String @unique
+  chats Chats? @relation(fields: [chat], references: [chat_id])
+  chat Int @unique
 }
