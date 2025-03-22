@@ -5,10 +5,14 @@ import { UpdateMessageDto } from './dto/update-message.dto';
 @Injectable()
 export class MessageService {
   id=0;
-  private messages: any[] = [{id:this.id, whoSended: "You", text: "Hi!"},
-    {id: this.id++, whoSended: "Interlocutor", text: "Hello!"},
-    {id: this.id++, whoSended: "Interlocutor", text: "How are u?"},
-    {id: this.id++, whoSended: "You", text: "I'm good!"}];
+  private messages: any[] = [{id:this.id, whoSended: "You", text: "Hi!", chat: 'Hello-chat'},
+    {id: this.id++, whoSended: "Interlocutor", text: "Hello!", chat: 'Hello-chat'},
+    {id: this.id++, whoSended: "Interlocutor", text: "How are u?", chat: 'Hello-chat'},
+    {id: this.id++, whoSended: "You", text: "I'm good!", chat: 'Hello-chat'},
+    {id:this.id, whoSended: "john", text: "Ohayo!", chat: 'Hello2-chat'},
+    {id: this.id++, whoSended: "Interlocutor", text: "Hello2!", chat: 'Hello2-chat'},
+    {id: this.id++, whoSended: "Interlocutor", text: "How are u?", chat: 'Hello2-chat'},
+    {id: this.id++, whoSended: "john", text: "I'm good!", chat: 'Hello2-chat'}];
 
   create(createMessageDto: CreateMessageDto) {
     const newMessage = {

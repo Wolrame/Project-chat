@@ -2,35 +2,57 @@
   <v-app>
     <v-main>
       <Auth v-if="!isAuthenticated" @login-success="handleLoginSuccess" @username="handleUsername"/>
-      <v-container v-else max-width="500" class="messages-container">
-        <!-- Добавлен wrapper для списка сообщений -->
-        <div ref="messagesList" class="messages-list">
-          <v-list>
-            <v-list-item
-              v-for="message in messages"
-              
-              :key="message.id"
-              
+      <div v-else>
+        <v-row>
+          <v-col>
+            <v-list 
+              max-width="500" 
             >
-              <div  :class="['message-bubble', message.whoSended===WhoAreYou?['my-message', 'text-right']:'other-message']">
-                <v-list-item-subtitle
-                style="user-select: none; -webkit-user-select: none"
-                >
-                {{ message.whoSended===WhoAreYou?'You':message.whoSended }}</v-list-item-subtitle>
-                <v-list-item-title >{{ message.text}}</v-list-item-title>
+              <v-list-subheader>Чаты</v-list-subheader>
+              <v-list-item
+                v-for="(chat, i) in chats"
+                :key="i"
+                :value="chat"
+                color="primary"
+                variant="plain"
+                @click="chooseChat(chat)"
+              >
+                <v-list-item-title>{{ chat }}</v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-col>
+          <v-col>
+            <v-container max-width="500" class="messages-container">
+              <!-- Добавлен wrapper для списка сообщений -->
+              <div ref="messagesList" class="messages-list">
+                <v-list>
+                  <v-list-item
+                    v-for="(message, i) in choosedMessages"
+                    :key="i"
+                  >
+                    <div  :class="['message-bubble', message.whoSended===WhoAreYou?['my-message', 'text-right']:'other-message']">
+                      <v-list-item-subtitle
+                      style="user-select: none; -webkit-user-select: none"
+                      >
+                      {{ message.whoSended===WhoAreYou?'You':message.whoSended }}</v-list-item-subtitle>
+                      <v-list-item-title >{{ message.text}}</v-list-item-title>
+                    </div>
+                  </v-list-item>
+                </v-list>
               </div>
-            </v-list-item>
-          </v-list>
-        </div>
-        <v-text-field 
-          class="inputText"
-          v-model="text" 
-          label="Введите сообщение" 
-          variant="outlined" 
-          append-inner-icon="mdi-chevron-right" 
-          @click:append-inner="onClick">
-        </v-text-field>
-      </v-container>
+              <v-text-field 
+                class="inputText"
+                v-model="text" 
+                label="Введите сообщение" 
+                variant="outlined" 
+                append-inner-icon="mdi-chevron-right" 
+                @click:append-inner="onClick">
+              </v-text-field>
+            </v-container>
+          </v-col>
+          <v-col></v-col> 
+        </v-row>
+      </div>
     </v-main>
   </v-app>
 </template>
@@ -50,7 +72,13 @@
 
   const isAuthenticated = ref(false);
   const text = ref('')
+  const choosedChat = ref<string>('')
   const messages = ref<any[]>([])
+  const chats = ref<string[]>([
+    'Hello-chat',
+    'Hello2-chat'
+  ])
+  const choosedMessages = ref<any[]>([])
   let socket: ReturnType<typeof io>;
   const messagesList = ref<HTMLElement>();
   const handleLoginSuccess = (token: string) => {
@@ -66,10 +94,20 @@
     if (text.value.trim()) {
       socket.emit('createMessage', {
         whoSended: WhoAreYou.value,
-        text: text.value
+        text: text.value,
+        chat: choosedChat.value
       });
       text.value = '';
     }
+  }
+
+  function chooseChat(chat: string) {
+    choosedChat.value = chat;
+    // Фильтрация сообщений по выбранному чату
+    choosedMessages.value = messages.value.filter(
+      msg => msg.chat === choosedChat.value
+    );
+    scrollToBottom();
   }
 
   const scrollToBottom = () => {
@@ -114,9 +152,12 @@
   }
 
   onMounted(async()=> {
-    initWebSocket(localStorage.getItem("access_token"))
+/*     initWebSocket(localStorage.getItem("access_token"))
     .then(()=> isAuthenticated.value=true)
-    .catch(console.log);
+    .catch((e)=> {
+      isAuthenticated.value=false
+      console.error(e);
+    }); */
   })
   onBeforeUnmount(() => {
     if (socket) socket.disconnect();
