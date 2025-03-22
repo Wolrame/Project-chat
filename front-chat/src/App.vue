@@ -24,7 +24,7 @@
           <v-col>
             <v-container max-width="500" class="messages-container">
               <!-- Добавлен wrapper для списка сообщений -->
-              <div ref="messagesList" class="messages-list">
+              <div ref="messagesList" class="messages-list" v-if="choosedChat">
                 <v-list>
                   <v-list-item
                     v-for="(message, i) in choosedMessages"
@@ -41,6 +41,7 @@
                 </v-list>
               </div>
               <v-text-field 
+                v-if="choosedChat"
                 class="inputText"
                 v-model="text" 
                 label="Введите сообщение" 
@@ -143,6 +144,7 @@
 
     socket.on('newMessage', (data: any) => {
       messages.value.push(data);
+      if (data.chat===choosedChat.value) choosedMessages.value.push(data);
       scrollToBottom();
     });
 

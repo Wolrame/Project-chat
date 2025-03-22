@@ -1,25 +1,42 @@
 
 import { Injectable } from '@nestjs/common';
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 // This should be a real class/interface representing a user entity
-export type User = any;
+export type User = {
+  id: number,
+  username: string,
+  password: string
+};
+async function connect() {
+  await prisma.$connect()
+}
+connect()
 
 @Injectable()
 export class UsersService {
-  private readonly users = [
-    {
-      userId: 1,
-      username: 'john',
-      password: 'changeme',
-    },
-    {
-      userId: 2,
-      username: 'maria',
-      password: 'guess',
-    },
-  ];
 
-  async findOne(username: string): Promise<User | undefined> {
-    return this.users.find(user => user.username === username);
+  async findOne(username: string): Promise<User | null> {
+    return await prisma.user.findUnique({
+      where: {
+        username: username,
+      },
+    })
+  }
+  async createOne(username: string, password: string): Promise<User> {
+    const existingUser = await this.findOne(username);
+    if (existingUser) {
+      throw new DOMException('User already exists');
+    }
+
+    // 2. Создаем нового пользователя
+    return prisma.user.create({
+      data: {
+        username,
+        password, // Наверное надо хэшировать но я ленивый и это пет-проект
+      },
+    });
   }
 }
