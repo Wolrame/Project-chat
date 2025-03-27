@@ -33,14 +33,16 @@ model Messages {
 
 model Chats {
   chat_id Int @default(autoincrement()) @id
-  chat String
+  chat String 
+  @@unique([chat_id, chat])
   messages Messages[]
   inChat InChat[]
 }
 
-model InChat {
+model InChat { //Я насрал надо исправить
+  user_chat_Relation Int  @default(autoincrement()) @id
   user User? @relation(fields: [username], references: [username])
-  username String @unique
-  chats Chats? @relation(fields: [chat], references: [chat_id])
-  chat Int @unique
+  username String 
+  chats Chats? @relation(fields: [chat_id], references: [chat_id])
+  chat_id Int 
 }

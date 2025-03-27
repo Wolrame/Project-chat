@@ -1,6 +1,6 @@
 // create-message.dto.ts
 export class CreateMessageDto {
-    whoSended: string;
+    WhoSended: string;
     text: string;
-    chat: string;
+    chat: number;
   }

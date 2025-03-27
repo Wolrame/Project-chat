@@ -1,31 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
-
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient()
 @Injectable()
 export class MessageService {
-  id=0;
-  private messages: any[] = [{id:this.id, whoSended: "You", text: "Hi!", chat: 'Hello-chat'},
-    {id: this.id++, whoSended: "Interlocutor", text: "Hello!", chat: 'Hello-chat'},
-    {id: this.id++, whoSended: "Interlocutor", text: "How are u?", chat: 'Hello-chat'},
-    {id: this.id++, whoSended: "You", text: "I'm good!", chat: 'Hello-chat'},
-    {id:this.id, whoSended: "john", text: "Ohayo!", chat: 'Hello2-chat'},
-    {id: this.id++, whoSended: "Interlocutor", text: "Hello2!", chat: 'Hello2-chat'},
-    {id: this.id++, whoSended: "Interlocutor", text: "How are u?", chat: 'Hello2-chat'},
-    {id: this.id++, whoSended: "john", text: "I'm good!", chat: 'Hello2-chat'}];
 
-  create(createMessageDto: CreateMessageDto) {
-    const newMessage = {
-      id: this.messages.length + 1, // Исправлено: +1 для уникальности
-      ...createMessageDto,
-      timestamp: new Date()
-    };
-    this.messages.push(newMessage);
+
+  async create(createMessageDto: CreateMessageDto) {
+
+    const newMessage = await prisma.messages.create({
+      data: {
+        WhoSended: createMessageDto.WhoSended,
+        text: createMessageDto.text,
+        chat: createMessageDto.chat
+      }
+    })
     return newMessage;
   }
   
-  findAll() {
-    return this.messages;
+  findAll(chatId=0) {
+    return prisma.chats.findUnique({
+      where: {
+        chat_id: chatId
+      },
+      include: {
+        messages: true
+      }
+    })
   }
   findOne(id: number) {
     return `This action returns a #${id} message`;

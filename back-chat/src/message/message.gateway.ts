@@ -1,4 +1,4 @@
-import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
+import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect, MessageBody } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -36,9 +36,9 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
   }
 
   @SubscribeMessage('findAllMessage')
-  async findAll() {
-    const messages = await this.messageService.findAll();
-    this.server.emit('allMessages', messages);
-    return messages;
+  async findAll(@MessageBody() data: { chat_id: number }) {
+    const fullChat = await this.messageService.findAll(data?.chat_id);
+    this.server.emit('allMessages', fullChat);
+    return fullChat;
   }
 }
