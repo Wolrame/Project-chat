@@ -5,12 +5,22 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient;
 @Injectable()
 export class ChatService {
-  create(createChatDto: CreateChatDto) {
-    return 'This action adds a new chat';
+  async create(createChatDto: CreateChatDto) {
+    const chat_id = await prisma.chats.create({
+      data: {
+        chat: createChatDto.chat
+      },
+      select: {
+        chat_id: true
+      }
+    })
+    return prisma.inChat.createMany({
+      data: createChatDto.users.map(el=> {return {username: el, chat_id: chat_id.chat_id}})
+    })
   }
 
-  findAll(username: string) {
-    return prisma.inChat.findMany({
+  async findAll(username: string) {
+    return await prisma.inChat.findMany({
       where: {
         username: username
       },

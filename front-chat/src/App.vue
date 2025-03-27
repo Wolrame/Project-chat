@@ -8,7 +8,19 @@
             <v-list 
               max-width="500"
             >
-              <v-list-subheader>Чаты</v-list-subheader>
+              <v-list-subheader 
+                class="d-flex align-center justify-space-between px-2" 
+                style="width: 100%;"
+              >
+                <span>Чаты</span>
+                <v-btn
+                  icon="mdi-plus"
+                  variant="text"
+                  density="comfortable"
+                  style="margin-left: 400px;"
+                  @click="openNewChatDialog"
+                ></v-btn>
+              </v-list-subheader>
               <v-list-item
                 v-for="chat in chats" 
                 :key="chat.id"
@@ -54,6 +66,31 @@
         </v-row>
       </div>
     </v-main>
+    <v-dialog v-model="showNewChatDialog" max-width="500">
+      <v-card>
+        <v-card-title>Создать новый чат</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="newChatName"
+            label="Название чата"
+            outlined
+          ></v-text-field>
+          
+          <v-select
+            v-model="selectedUsers"
+            :items="allUsers"
+            label="Выберите участников"
+            multiple
+            chips
+            outlined
+          ></v-select>
+        </v-card-text>
+        <v-card-actions>
+          <v-btn @click="showNewChatDialog = false; newChatName=''; selectedUsers=[]">Отмена</v-btn>
+          <v-btn color="primary" @click="createNewChat">Создать</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -63,6 +100,7 @@
   import axios from 'axios';
   import { onBeforeUnmount, onMounted, ref, nextTick } from "vue";
   import { io } from "socket.io-client";
+import { all } from "node_modules/axios/index.cjs";
 
 
 
@@ -70,6 +108,10 @@
   '/auth': Auth
 }
 
+  const showNewChatDialog = ref(false);
+  const newChatName = ref('');
+  const selectedUsers= ref<string[]>([]);
+  const allUsers = ref<string[]>([]);
   const isAuthenticated = ref(false);
   const text = ref('')
   const choosedChat = ref<number>()
@@ -93,15 +135,33 @@
   }
   const WhoAreYou = ref<string>('')
 
-  function onClick() {
+  async function onClick() {
     if (text.value.trim()) {
-      socket.emit('createMessage', {
+      await socket.emit('createMessage', {
         WhoSended: WhoAreYou.value,
         text: text.value,
         chat: choosedChat.value
       });
       text.value = '';
     }
+  }
+
+  async function openNewChatDialog() {
+    showNewChatDialog.value = !showNewChatDialog.value
+    try {
+      allUsers.value = JSON.parse(await (await axios.get('http://localhost:5000/user')).request.response).map((user: {username: string}) => user.username)
+    } catch (error) {
+      console.error(error)
+    }
+  }
+  async function createNewChat() {
+    await axios.post('http://localhost:5000/chat/', {
+          chat: newChatName.value,
+          users: selectedUsers.value
+        })
+    handleUsername(WhoAreYou.value)
+    showNewChatDialog.value = !showNewChatDialog.value
+    selectedUsers.value=[]; newChatName.value=''; allUsers.value=[]
   }
 
   async function chooseChat(chat_id: number) {

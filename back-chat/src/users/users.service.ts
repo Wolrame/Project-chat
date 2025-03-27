@@ -25,6 +25,15 @@ export class UsersService {
       },
     })
   }
+
+  async findAll(): Promise<object | null> {
+    return await prisma.user.findMany({
+      select: {
+        username:true
+      }
+    })
+  }
+
   async createOne(username: string, password: string): Promise<User> {
     const existingUser = await this.findOne(username);
     if (existingUser) {
