@@ -117,7 +117,7 @@ const onRegister = async () => {
     }, {
         headers: { 'Content-Type': 'application/json' }
     })
-    emit('login-success', response.data.access_token);
+    emit('login-success');
     emit('username', login.value);
   } catch {
     errorMessage.value = error.response?.data?.message || 'Ошибка регистрации';
@@ -140,10 +140,8 @@ const onSubmit = async () => {
       headers: { 'Content-Type': 'application/json' }
     });
 
-    // Сохраняем токен
-/*     localStorage.setItem('access_token', response.data.access_token);
-    localStorage.setItem('username', login.value); */
-    emit('login-success', response.data.access_token);
+
+    emit('login-success');
     emit('username', login.value);
   } catch (error) {
     errorMessage.value = error.response?.data?.message || 'Ошибка авторизации';

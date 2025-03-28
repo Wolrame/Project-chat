@@ -109,7 +109,7 @@
   const allUsers = ref<string[]>([]);     //Все пользователи которых можно добавить в чат
   const isAuthenticated = ref(false);     //Отвечает за окно авторизации
   const text = ref('')                    //Текст для отправки сообщения
-  const WhoAreYou = ref<string>('')       //username пользователя
+  const WhoAreYou = ref<string | undefined>('')       //username пользователя
   const choosedChat = ref<number>()       //id выбранного чата
   const fullChat = ref<{                  //массив сообщений выбранного чата
     chat_id: number,
@@ -120,16 +120,20 @@
   let socket: ReturnType<typeof io>;      //Сокет для вебсокета
   const messagesList = ref<HTMLElement>();//HTML элемент окна сообщений
 
-  const handleLoginSuccess = (token: string) => {//
+  const handleLoginSuccess = () => {//
     isAuthenticated.value = true;
-    initWebSocket(token);
+    initWebSocket();
   };
 
-  const handleUsername = async (username: string) => {
-    WhoAreYou.value=username;
-    const response = await axios.get(`http://localhost:5000/chat/${username}`)
-    chats.value = JSON.parse(response.request.response)
-
+  const handleUsername = async () => {
+    const cookie = document.cookie?.split('; ').find(c => c.startsWith('username=')|| '');
+    const username = cookie?.split('=')[1];
+    if (username)
+    {
+      WhoAreYou.value= username
+      const response = await axios.get(`http://localhost:5000/chat/${username}`, {withCredentials: true})
+      if (response.data) chats.value = response.data
+    }
   }
 
 
@@ -151,7 +155,7 @@
   async function openNewChatDialog() {
     showNewChatDialog.value = !showNewChatDialog.value
     try {
-      allUsers.value = JSON.parse(await (await axios.get('http://localhost:5000/user')).request.response).map((user: {username: string}) => user.username)
+      allUsers.value = await (await axios.get('http://localhost:5000/user')).data.map((user: {username: string}) => user.username)
     } catch (error) {
       console.error(error)
     }
@@ -161,7 +165,7 @@
           chat: newChatName.value,
           users: selectedUsers.value
         })
-    handleUsername(WhoAreYou.value)
+    handleUsername()
     showNewChatDialog.value = !showNewChatDialog.value
     selectedUsers.value=[]; newChatName.value=''; allUsers.value=[]
   }
@@ -196,21 +200,17 @@
     });
   };
 
-  async function initWebSocket(jwt_token: any) {
-    if (!jwt_token) {
-      throw console.error('Unauthorized');
-    }
+  async function initWebSocket() {
     socket = await io("ws://localhost:8080", {
       transports: ['websocket'],
       autoConnect: true,
-      reconnection: true,
-      auth: {
-        token: `Bearer ${jwt_token}` 
-      }
+      reconnection: false,
+      withCredentials: true, 
     });
 
     socket.on('connect', () => {
       console.log('WebSocket connected');
+      isAuthenticated.value = true;
       socket.emit('findAllMessage');
     });
 
@@ -222,10 +222,21 @@
     socket.on('connect_error', (err) => {
       console.error('Connection error:', err.message);
     });
+    socket.on('authError', (error) => {
+      console.error('Auth error:', error.message);
+      isAuthenticated.value = false;
+    });
   }
 
   onMounted(async()=> {
-
+    axios.defaults.withCredentials = true
+    try {
+      await initWebSocket();
+      await handleUsername()
+    }
+    catch (error) {
+      console.log(error);
+    }
   })
   onBeforeUnmount(() => {
     if (socket) socket.disconnect();

@@ -4,11 +4,12 @@ import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { AuthGuard } from 'src/auth/auth.guard';
 import { UseGuards } from '@nestjs/common';
+import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-host';
 
-@UseGuards(AuthGuard)
+
 @WebSocketGateway(8080, {
   cors: {
-    origin: 'http://localhost:3000', // Адрес фронтенда
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],
     allowedHeaders: ['Authorization'],
     credentials: true,
@@ -18,10 +19,25 @@ import { UseGuards } from '@nestjs/common';
 export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   
-  constructor(private readonly messageService: MessageService) {}
+  constructor(private readonly messageService: MessageService, private readonly authGuard: AuthGuard) {}
 
-  handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+  async handleConnection(client: Socket) {
+    try {
+      const isAuth = await this.authGuard.canActivate(
+        new ExecutionContextHost([client])
+      );
+      if (!isAuth) {
+        console.log(`Auth failed: ${client.id}`);
+        client.emit('authError', { message: 'Требуется авторизация' });
+        client.disconnect(true);
+        return false; // Важно прервать выполнение
+      }
+      console.log(`Client connected: ${client.id}`);
+    } catch (error) {
+      console.log(`Auth error: ${client.id}`, error);
+      client.emit('authError', { message: 'Ошибка аутентификации' });
+      client.disconnect(true);
+    }
   }
 
   handleDisconnect(client: Socket) {
@@ -31,7 +47,7 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
   @SubscribeMessage('createMessage')
   async create(client: Socket, createMessageDto: CreateMessageDto) {
     const message = await this.messageService.create(createMessageDto);
-    this.server.emit('newMessage', message); // Изменили название события
+    this.server.emit('newMessage', message);
     return message;
   }
 

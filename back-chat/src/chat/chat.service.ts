@@ -19,7 +19,7 @@ export class ChatService {
     })
   }
 
-  async findAll(username: string) {
+  async findAll(username: string) {//Выдаёт список чатов данного пользователя
     return await prisma.inChat.findMany({
       where: {
         username: username
