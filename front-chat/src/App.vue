@@ -37,7 +37,9 @@
             <v-container max-width="500" class="messages-container">
               <div ref="messagesList" class="messages-list" v-if="fullChat">
                 <v-list>
+                  <div v-if="!isAuthenticated">Вы не авторизованы</div>
                   <v-list-item
+                    v-else
                     v-for="(message, i) in fullChat.messages"
                     :key="i"
                   >
@@ -100,50 +102,50 @@
   import axios from 'axios';
   import { onBeforeUnmount, onMounted, ref, nextTick } from "vue";
   import { io } from "socket.io-client";
-import { all } from "node_modules/axios/index.cjs";
 
-
-
-  const routes = {
-  '/auth': Auth
-}
-
-  const showNewChatDialog = ref(false);
-  const newChatName = ref('');
-  const selectedUsers= ref<string[]>([]);
-  const allUsers = ref<string[]>([]);
-  const isAuthenticated = ref(false);
-  const text = ref('')
-  const choosedChat = ref<number>()
-  const fullChat = ref<{
+  const showNewChatDialog = ref(false);   //Отвечает за показ окна создания чата
+  const newChatName = ref('');            //Имя нового чата
+  const selectedUsers= ref<string[]>([]); //Выбранные пользователи для создания чата
+  const allUsers = ref<string[]>([]);     //Все пользователи которых можно добавить в чат
+  const isAuthenticated = ref(false);     //Отвечает за окно авторизации
+  const text = ref('')                    //Текст для отправки сообщения
+  const WhoAreYou = ref<string>('')       //username пользователя
+  const choosedChat = ref<number>()       //id выбранного чата
+  const fullChat = ref<{                  //массив сообщений выбранного чата
     chat_id: number,
     chat: string,
     messages: any[]
   }>()
-  const chats = ref<any[]>([])
-  let socket: ReturnType<typeof io>;
-  const messagesList = ref<HTMLElement>();
-  const handleLoginSuccess = (token: string) => {
+  const chats = ref<any[]>([])            //массив чатов (chat_id, chat)
+  let socket: ReturnType<typeof io>;      //Сокет для вебсокета
+  const messagesList = ref<HTMLElement>();//HTML элемент окна сообщений
+
+  const handleLoginSuccess = (token: string) => {//
     isAuthenticated.value = true;
     initWebSocket(token);
   };
+
   const handleUsername = async (username: string) => {
     WhoAreYou.value=username;
     const response = await axios.get(`http://localhost:5000/chat/${username}`)
     chats.value = JSON.parse(response.request.response)
 
   }
-  const WhoAreYou = ref<string>('')
+
 
   async function onClick() {
-    if (text.value.trim()) {
-      await socket.emit('createMessage', {
-        WhoSended: WhoAreYou.value,
-        text: text.value,
-        chat: choosedChat.value
-      });
-      text.value = '';
-    }
+    try
+    {
+      if (text.value.trim()) {
+        await socket.emit('createMessage', {
+          WhoSended: WhoAreYou.value,
+          text: text.value,
+          chat: choosedChat.value
+        });
+        text.value = '';
+      }
+    } 
+    catch {console.error('Ошибка отправки сообщения')}
   }
 
   async function openNewChatDialog() {
@@ -187,11 +189,11 @@ import { all } from "node_modules/axios/index.cjs";
   }
 
   const scrollToBottom = () => {
-  nextTick(() => {
-    if (messagesList.value) {
-      messagesList.value.scrollTop = messagesList.value.scrollHeight;
-    }
-  });
+    nextTick(() => {
+      if (messagesList.value) {
+        messagesList.value.scrollTop = messagesList.value.scrollHeight;
+      }
+    });
   };
 
   async function initWebSocket(jwt_token: any) {
