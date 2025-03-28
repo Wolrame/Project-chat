@@ -43,7 +43,23 @@ export class ChatService {
     return `This action updates a #${id} chat`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} chat`;
+  async remove(chat_id: number) {
+    await prisma.inChat.deleteMany({
+      where: {
+        chat_id: chat_id
+      }
+    })
+    
+    await prisma.messages.deleteMany({
+      where: {
+        chat: chat_id
+      }
+    })
+
+    return await prisma.chats.delete({
+      where: {
+        chat_id: chat_id
+      }
+    })
   }
 }

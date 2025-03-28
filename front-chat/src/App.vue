@@ -29,7 +29,14 @@
                 variant="plain"
                 @click="chooseChat(chat.chat_id)"
               >
-                <v-list-item-title>{{ chat.chats.chat }}</v-list-item-title>
+                <v-list-item-title >{{ chat.chats.chat }}</v-list-item-title>
+                <template v-slot:append>
+                  <v-btn
+                    icon="mdi-close"
+                    variant="text"
+                    @click="openDeletingChatDialog(chat.chat_id)"
+                  ></v-btn>
+                </template> 
               </v-list-item>
             </v-list>
           </v-col>
@@ -93,6 +100,16 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <v-dialog v-model="showDeleteChatDialog" max-width="500">
+      <v-card>
+        <v-card-title>Удаление чата</v-card-title>
+        <v-card-text>Вы уверены, что хотите удалить выбранный чат?</v-card-text>
+        <v-card-actions>
+          <v-btn @click="showDeleteChatDialog= false">Отмена</v-btn>
+          <v-btn color="primary" @click="deleteChat">Да</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -116,9 +133,11 @@
     chat: string,
     messages: any[]
   }>()
-  const chats = ref<any[]>([])            //массив чатов (chat_id, chat)
+  const chats = ref<any[]>([]);            //массив чатов (chat_id, chat)
   let socket: ReturnType<typeof io>;      //Сокет для вебсокета
   const messagesList = ref<HTMLElement>();//HTML элемент окна сообщений
+  const showDeleteChatDialog = ref(false);
+  const deletingChat = ref<number>();
 
   const handleLoginSuccess = () => {//
     isAuthenticated.value = true;
@@ -160,6 +179,7 @@
       console.error(error)
     }
   }
+
   async function createNewChat() {
     await axios.post('http://localhost:5000/chat/', {
           chat: newChatName.value,
@@ -168,6 +188,16 @@
     handleUsername()
     showNewChatDialog.value = !showNewChatDialog.value
     selectedUsers.value=[]; newChatName.value=''; allUsers.value=[]
+  }
+
+  async function openDeletingChatDialog(chat_id: number) {
+    showDeleteChatDialog.value = true;
+    deletingChat.value = chat_id
+  }
+  async function deleteChat() {
+    await axios.delete(`http://localhost:5000/chat/${deletingChat.value}`)
+    handleUsername()
+    deletingChat.value = 0; showDeleteChatDialog.value=false;
   }
 
   async function chooseChat(chat_id: number) {
@@ -204,7 +234,7 @@
     socket = await io("ws://localhost:8080", {
       transports: ['websocket'],
       autoConnect: true,
-      reconnection: false,
+      reconnection: true,
       withCredentials: true, 
     });
 
@@ -232,11 +262,12 @@
     axios.defaults.withCredentials = true
     try {
       await initWebSocket();
-      await handleUsername()
+      await handleUsername();
     }
     catch (error) {
       console.log(error);
     }
+    console.log(document.cookie)
   })
   onBeforeUnmount(() => {
     if (socket) socket.disconnect();

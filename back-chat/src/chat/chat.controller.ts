@@ -30,8 +30,8 @@ export class ChatController {
     return this.chatService.update(+id, updateChatDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.chatService.remove(+id);
+  @Delete(':chat_id')
+  remove(@Param('chat_id') chat_id: string) {
+    return this.chatService.remove(Number.parseInt(chat_id));
   }
 }

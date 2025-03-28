@@ -17,7 +17,6 @@ export class AuthController {
       sameSite: 'strict',
     });
     res.cookie('username', signInDto.username, {
-      httpOnly: false,
       maxAge: 600 * 1000, // 10 минут
       sameSite: 'strict',
     });
@@ -34,7 +33,6 @@ export class AuthController {
       sameSite: 'strict',
     });
     res.cookie('username', signInDto.username, {
-      httpOnly: false,
       maxAge: 600 * 1000, // 10 минут
       sameSite: 'strict',
     });
