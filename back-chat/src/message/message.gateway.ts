@@ -8,6 +8,7 @@ import { ExecutionContextHost } from '@nestjs/core/helpers/execution-context-hos
 
 
 @WebSocketGateway(8080, {
+  host: '0.0.0.0',
   cors: {
     origin: 'http://localhost:3000',
     methods: ['GET', 'POST'],

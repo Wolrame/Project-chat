@@ -49,3 +49,6 @@
     max-height: fit-content;
     flex-shrink: 0; /* Фиксируем поле ввода */
   }
+  .userSelect {
+    overflow-y: auto;
+  }

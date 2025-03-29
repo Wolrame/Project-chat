@@ -1,7 +1,13 @@
 <template>
   <v-app>
     <v-main>
+      <v-app-bar v-if="isAuthenticated" color="primary" density="compact">
+        <v-spacer></v-spacer>
+        <v-btn icon="mdi-logout" @click="logout"></v-btn>
+      </v-app-bar>
+
       <Auth v-if="!isAuthenticated" @login-success="handleLoginSuccess" @username="handleUsername"/>
+
       <div v-else>
         <v-row>
           <v-col>
@@ -85,14 +91,19 @@
             outlined
           ></v-text-field>
           
-          <v-select
-            v-model="selectedUsers"
-            :items="allUsers"
-            label="Выберите участников"
-            multiple
-            chips
-            outlined
-          ></v-select>
+            <v-select
+              v-model="selectedUsers"
+              :items="allUsers"
+              label="Выберите участников"
+              multiple
+              chips
+              outlined
+              class="wrapper"
+              :menu-props="{ /* Я хз как это чинить */
+                contentClass: '', /* userSelect */
+                transition: 'slide-y-transition',
+                location:'bottom'}"
+            ></v-select>
         </v-card-text>
         <v-card-actions>
           <v-btn @click="showNewChatDialog = false; newChatName=''; selectedUsers=[]">Отмена</v-btn>
@@ -155,6 +166,15 @@
     }
   }
 
+  function logout() {
+    isAuthenticated.value = false;
+    choosedChat.value = undefined;
+    text.value = '';
+    WhoAreYou.value = '';
+    fullChat.value = undefined;
+    chats.value = [];
+    socket.disconnect();
+  }
 
   async function onClick() {
     try
@@ -198,6 +218,8 @@
     await axios.delete(`http://localhost:5000/chat/${deletingChat.value}`)
     handleUsername()
     deletingChat.value = 0; showDeleteChatDialog.value=false;
+    fullChat.value = undefined;
+    choosedChat.value = undefined;
   }
 
   async function chooseChat(chat_id: number) {
